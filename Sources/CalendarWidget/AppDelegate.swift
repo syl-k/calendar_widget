@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         service.start()
+        NotificationManager.shared.requestAuthorizationIfNeeded()
         widget = WidgetController(service: service)
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -37,6 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         menu.addItem(opacityMenuItem())
         menu.addItem(calendarsMenuItem())
+        menu.addItem(notificationMenuItem())
         menu.addItem(.separator())
 
         let reset = NSMenuItem(title: "位置をリセット", action: #selector(resetPosition), keyEquivalent: "")
@@ -99,6 +101,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         return item
     }
 
+    private func notificationMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "予定の通知", action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+        let current = Settings.shared.notificationLeadMinutes
+
+        // (表示名, リード分. nil = オフ)
+        let options: [(String, Int?)] = [
+            ("オフ", nil),
+            ("1分前", 1),
+            ("5分前", 5),
+            ("10分前", 10),
+            ("15分前", 15),
+        ]
+        for (title, minutes) in options {
+            let sub = NSMenuItem(title: title, action: #selector(setNotificationLead(_:)), keyEquivalent: "")
+            sub.target = self
+            // nil は tag 0 で表現(0分前という選択肢は無いため衝突しない)
+            sub.tag = minutes ?? 0
+            sub.state = (current == minutes) ? .on : .off
+            submenu.addItem(sub)
+        }
+        item.submenu = submenu
+        return item
+    }
+
     // MARK: Actions
 
     @objc private func toggleWidget() {
@@ -112,6 +139,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func setOpacity(_ sender: NSMenuItem) {
         Settings.shared.baseOpacity = Double(sender.tag) / 100
         widget.applyBaseOpacity()
+    }
+
+    @objc private func setNotificationLead(_ sender: NSMenuItem) {
+        Settings.shared.notificationLeadMinutes = sender.tag == 0 ? nil : sender.tag
+        NotificationManager.shared.requestAuthorizationIfNeeded()
+        service.reload()  // 通知を新しいタイミングで組み直す
     }
 
     @objc private func showAllCalendars() {

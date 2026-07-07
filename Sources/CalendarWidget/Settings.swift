@@ -8,6 +8,8 @@ final class Settings {
         static let baseOpacity = "baseOpacity"
         static let selectedCalendarIDs = "selectedCalendarIDs"
         static let widgetVisible = "widgetVisible"
+        static let notificationLeadMinutes = "notificationLeadMinutes"
+        static let notificationConfigured = "notificationConfigured"
     }
 
     var baseOpacity: Double {
@@ -36,5 +38,19 @@ final class Settings {
     var widgetVisible: Bool {
         get { defaults.object(forKey: Key.widgetVisible) as? Bool ?? true }
         set { defaults.set(newValue, forKey: Key.widgetVisible) }
+    }
+
+    /// 予定開始の何分前に通知するか。nil = 通知オフ。既定は 5 分前。
+    var notificationLeadMinutes: Int? {
+        get {
+            // 未設定(初回)は既定 5 分、明示的にオフにした場合のみ nil
+            guard defaults.bool(forKey: Key.notificationConfigured) else { return 5 }
+            let v = defaults.integer(forKey: Key.notificationLeadMinutes)
+            return v == 0 ? nil : v
+        }
+        set {
+            defaults.set(true, forKey: Key.notificationConfigured)
+            defaults.set(newValue ?? 0, forKey: Key.notificationLeadMinutes)
+        }
     }
 }

@@ -101,5 +101,32 @@ final class CalendarService: ObservableObject {
         allDayEvents = events
             .filter { $0.isAllDay }
             .sorted { $0.startDate < $1.startDate }
+
+        scheduleNotifications()
+    }
+
+    /// 通知は表示窓より先の予定にも必要なので、当日いっぱいを別枠で取得して組み直す。
+    private func scheduleNotifications() {
+        guard Settings.shared.notificationLeadMinutes != nil else {
+            NotificationManager.shared.cancelAll()
+            return
+        }
+
+        let visibleCalendars: [EKCalendar]?
+        if let ids = Settings.shared.selectedCalendarIDs {
+            let filtered = calendars.filter { ids.contains($0.calendarIdentifier) }
+            visibleCalendars = filtered.isEmpty ? nil : filtered
+        } else {
+            visibleCalendars = nil
+        }
+
+        let calendar = Calendar.current
+        let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: now) ?? now.addingTimeInterval(12 * 3600)
+        // 深夜近くでも最低 6 時間先までは通知対象にする
+        let end = max(endOfDay, now.addingTimeInterval(6 * 3600))
+        let predicate = store.predicateForEvents(withStart: now, end: end, calendars: visibleCalendars)
+        let upcoming = store.events(matching: predicate).filter { !$0.isAllDay }
+
+        NotificationManager.shared.reschedule(events: upcoming)
     }
 }
