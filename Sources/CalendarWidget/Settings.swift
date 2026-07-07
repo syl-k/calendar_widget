@@ -10,6 +10,7 @@ final class Settings {
         static let widgetVisible = "widgetVisible"
         static let notificationLeadMinutes = "notificationLeadMinutes"
         static let notificationConfigured = "notificationConfigured"
+        static let notificationEnabled = "notificationEnabled"
     }
 
     var baseOpacity: Double {
@@ -40,17 +41,21 @@ final class Settings {
         set { defaults.set(newValue, forKey: Key.widgetVisible) }
     }
 
-    /// 予定開始の何分前に通知するか。nil = 通知オフ。既定は 5 分前。
+    /// 予定開始の何分前に通知するか。0 = 開始時ちょうど、nil = 通知オフ。既定は 5 分前。
     var notificationLeadMinutes: Int? {
         get {
-            // 未設定(初回)は既定 5 分、明示的にオフにした場合のみ nil
+            // 未設定(初回)は既定 5 分
             guard defaults.bool(forKey: Key.notificationConfigured) else { return 5 }
-            let v = defaults.integer(forKey: Key.notificationLeadMinutes)
-            return v == 0 ? nil : v
+            // オフと「0 分前(開始時)」を区別するため、有効フラグを別に持つ
+            guard defaults.bool(forKey: Key.notificationEnabled) else { return nil }
+            return defaults.integer(forKey: Key.notificationLeadMinutes)
         }
         set {
             defaults.set(true, forKey: Key.notificationConfigured)
-            defaults.set(newValue ?? 0, forKey: Key.notificationLeadMinutes)
+            defaults.set(newValue != nil, forKey: Key.notificationEnabled)
+            if let minutes = newValue {
+                defaults.set(minutes, forKey: Key.notificationLeadMinutes)
+            }
         }
     }
 }

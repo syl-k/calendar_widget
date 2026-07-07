@@ -106,9 +106,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let submenu = NSMenu()
         let current = Settings.shared.notificationLeadMinutes
 
-        // (表示名, リード分. nil = オフ)
+        // (表示名, リード分. nil = オフ, 0 = 開始時)
         let options: [(String, Int?)] = [
             ("オフ", nil),
+            ("開始時", 0),
             ("1分前", 1),
             ("5分前", 5),
             ("10分前", 10),
@@ -117,8 +118,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         for (title, minutes) in options {
             let sub = NSMenuItem(title: title, action: #selector(setNotificationLead(_:)), keyEquivalent: "")
             sub.target = self
-            // nil は tag 0 で表現(0分前という選択肢は無いため衝突しない)
-            sub.tag = minutes ?? 0
+            // オフは -1 で表現(0 は「開始時」に使うため)
+            sub.tag = minutes ?? -1
             sub.state = (current == minutes) ? .on : .off
             submenu.addItem(sub)
         }
@@ -142,7 +143,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func setNotificationLead(_ sender: NSMenuItem) {
-        Settings.shared.notificationLeadMinutes = sender.tag == 0 ? nil : sender.tag
+        Settings.shared.notificationLeadMinutes = sender.tag < 0 ? nil : sender.tag
         NotificationManager.shared.requestAuthorizationIfNeeded()
         service.reload()  // 通知を新しいタイミングで組み直す
     }
