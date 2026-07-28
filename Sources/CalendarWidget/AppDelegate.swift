@@ -22,6 +22,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let menu = NSMenu()
         menu.delegate = self
         statusItem.menu = menu
+
+        enableLoginAtLaunchOnFirstRun()
+    }
+
+    /// 初回起動時に一度だけ「ログイン時に起動」を有効化する。
+    /// 以降はメニューの切り替えを尊重する(このフラグが立っていれば何もしない)。
+    private func enableLoginAtLaunchOnFirstRun() {
+        guard !Settings.shared.loginItemConfigured else { return }
+        Settings.shared.loginItemConfigured = true
+        // /Applications など安定した場所からでないと登録が無視されることがある
+        try? SMAppService.mainApp.register()
     }
 
     // メニューを開くたびに現在の状態で組み立て直す

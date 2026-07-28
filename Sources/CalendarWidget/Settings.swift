@@ -11,6 +11,13 @@ final class Settings {
         static let notificationLeadMinutes = "notificationLeadMinutes"
         static let notificationConfigured = "notificationConfigured"
         static let notificationEnabled = "notificationEnabled"
+        static let loginItemConfigured = "loginItemConfigured"
+    }
+
+    /// 初回起動時のログイン項目自動登録を一度だけ行うためのフラグ。
+    var loginItemConfigured: Bool {
+        get { defaults.bool(forKey: Key.loginItemConfigured) }
+        set { defaults.set(newValue, forKey: Key.loginItemConfigured) }
     }
 
     var baseOpacity: Double {
