@@ -1,6 +1,15 @@
 import AppKit
 import SwiftUI
 
+/// 背景をつかんだ位置からウィンドウ全体をドラッグ移動できるパネル。
+/// borderless + SwiftUI(NSHostingView) の構成では isMovableByWindowBackground が
+/// 効きにくいため、mouseDown で明示的に performDrag を呼ぶ。
+final class DraggablePanel: NSPanel {
+    override func mouseDown(with event: NSEvent) {
+        performDrag(with: event)
+    }
+}
+
 /// 最前面・クリック透過のウィジェットパネルを管理する。
 final class WidgetController {
     let panel: NSPanel
@@ -10,7 +19,7 @@ final class WidgetController {
     static let defaultSize = NSSize(width: 260, height: 540)
 
     init(service: CalendarService) {
-        panel = NSPanel(
+        panel = DraggablePanel(
             contentRect: NSRect(origin: .zero, size: Self.defaultSize),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
